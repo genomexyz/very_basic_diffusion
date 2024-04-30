@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import imageio
 import math
 from inspect import isfunction
+from functools import partial
+from PIL import Image
 
 
 #setting
@@ -31,37 +33,32 @@ def output_T(input):
 def show(input):
     plt.imshow(output_T(input).clip(0,1))
 
-def forward_step(t, condition_img, return_noise=False):
+def cosine_beta_schedule(timesteps, s=0.008):
     """
-        forward step: t-1 -> t
-    """    
-    assert t >= 0
+    cosine schedule as proposed in https://arxiv.org/abs/2102.09672
+    """
+    steps = timesteps + 1
+    x = torch.linspace(0, timesteps, steps)
+    alphas_cumprod = torch.cos(((x / timesteps) + s) / (1 + s) * torch.pi * 0.5) ** 2
+    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
+    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
+    return torch.clip(betas, 0.0001, 0.9999)
 
-    mean=alphas_sqrt[t]*condition_img    
-    std=betas[t].sqrt()
-      
-    # sampling from N
-    if not return_noise:
-        return mean+std*torch.randn_like(condition_img)
-    else:
-        noise=torch.randn_like(condition_img)
-        return mean+std*noise, noise
-    
-def forward_jump(t, condition_img, condition_idx=0, return_noise=False):
-    """
-        forward jump: 0 -> t
-    """   
-    assert t >= 0
-    
-    mean=alphas_cumprod_sqrt[t]*condition_img
-    std=(1-alphas_cumprod[t]).sqrt()
-      
-    # sampling from N
-    if not return_noise:
-        return mean+std*torch.randn_like(condition_img)
-    else:
-        noise=torch.randn_like(condition_img)
-        return mean+std*noise, noise
+def linear_beta_schedule(timesteps):
+    beta_start = 0.0001
+    beta_end = 0.02
+    return torch.linspace(beta_start, beta_end, timesteps)
+
+def quadratic_beta_schedule(timesteps):
+    beta_start = 0.0001
+    beta_end = 0.02
+    return torch.linspace(beta_start**0.5, beta_end**0.5, timesteps) ** 2
+
+def sigmoid_beta_schedule(timesteps):
+    beta_start = 0.0001
+    beta_end = 0.02
+    betas = torch.linspace(-6, 6, timesteps)
+    return torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
 
 
 def exists(x):
@@ -375,3 +372,8 @@ class Unet(nn.Module):
 
         x = self.final_res_block(x, t)
         return self.final_conv(x)
+
+#img = torch.FloatTensor(imageio.imread('fatoe.png')/255)
+img = Image.open('fatoe.png')
+plt.imshow(img)
+plt.show()
