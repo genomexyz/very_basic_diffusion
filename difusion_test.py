@@ -485,13 +485,14 @@ data_dir = "data"
 batch_size = 32
 image_size = 28
 channels = 3
-save_and_sample_every = 2
+save_and_sample_every = 100
 epochs = 6
 results_folder = 'res'
 
 # Define transformations to be applied to your images
 transform = transforms.Compose([
-    transforms.Resize((256, 256)),  # Resize images to 224x224
+    #transforms.Resize((256, 256)),  # Resize images to 224x224
+    transforms.Resize((28, 28)),  # Resize images to 224x224
     transforms.ToTensor(),           # Convert images to PyTorch tensors
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize images
 ])
@@ -529,41 +530,57 @@ optimizer = Adam(model.parameters(), lr=1e-3)
 #    #break
 #    pass
 
+step = 0
 for epoch in range(epochs):
     for idx, images in enumerate(dataloader):
         optimizer.zero_grad()
-        print(images[0].size())
+        #print(images[0].size())
         batch_size = images[0].size(0)
         images = torch.tensor(images[0])
         batch = images.to(device)
 
+        #TEST
+        #save_image(batch, '%s/test/sample.png'%(results_folder), nrow = 6)
+        #break_now = True
+        #break
+        #END TEST
+
         ## Algorithm 1 line 3: sample t uniformally for every example in the batch
         t = torch.randint(0, timesteps, (batch_size,), device=device).long()
         loss = p_losses(model, batch, t, loss_type="huber")
-        
-        print(t)
-        print(loss)
-        exit()
 
-      #batch_size = batch["pixel_values"].shape[0]
-      #batch = batch["pixel_values"].to(device)
+        #if step % 100 == 0:
+        #    print("Loss:", loss.item())
+
+        #print(t)
+        #print(loss)
+
+        if step % 100 == 0:
+            print("Loss:", loss.item())
 #
-      ## Algorithm 1 line 3: sample t uniformally for every example in the batch
-      #t = torch.randint(0, timesteps, (batch_size,), device=device).long()
-#
-      #loss = p_losses(model, batch, t, loss_type="huber")
-#
-      #if step % 100 == 0:
-      #  print("Loss:", loss.item())
-#
-      #loss.backward()
-      #optimizer.step()
-#
+        loss.backward()
+        optimizer.step()
+
       ## save generated images
-      #if step != 0 and step % save_and_sample_every == 0:
-      #  milestone = step // save_and_sample_every
-      #  batches = num_to_groups(4, batch_size)
-      #  all_images_list = list(map(lambda n: sample(model, batch_size=n, channels=channels), batches))
-      #  all_images = torch.cat(all_images_list, dim=0)
-      #  all_images = (all_images + 1) * 0.5
-      #  save_image(all_images, str(results_folder / f'sample-{milestone}.png'), nrow = 6)
+        if step != 0 and step % save_and_sample_every == 0:
+            milestone = step // save_and_sample_every
+            batches = num_to_groups(4, batch_size)
+            print('cek shape batches', np.array(batches))
+            all_images_list = list(map(lambda n: sample(model, image_size, batch_size=n, channels=channels), batches))[0]
+            print('cek image list')
+            print(len(all_images_list), len(all_images_list[0]))
+            all_images_list = [torch.tensor(arr) for arr in all_images_list]
+            #print(np.shape(all_images_list[0][0]))
+            #all_images = torch.tensor(all_images_list)
+            all_images = torch.cat(all_images_list, dim=0)
+            print('cek list', all_images.size())
+            print(all_images)
+            #all_images = torch.cat(all_images_list, dim=0)
+            all_images = (all_images + 1) * 0.5
+            #save_image(all_images, str(results_folder / f'sample-{milestone}.png'), nrow = 6)
+            save_image(all_images, '%s/img/sample-%s.png'%(results_folder, milestone), nrow = 6)
+            torch.save(model.state_dict(), '/content/drive/MyDrive/pokemon/model/'+'model-%s.pth'%(milestone))
+            #break_now = True
+            #break
+        step += 1
+torch.save(model.state_dict(), '/content/drive/MyDrive/pokemon/model/final-model.pth')
