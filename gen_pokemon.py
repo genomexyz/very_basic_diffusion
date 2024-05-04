@@ -501,38 +501,12 @@ model = Unet(
 model.to(device)
 model.load_state_dict(torch.load('model/final-model.pth', map_location=torch.device('cpu')))
 
-#print(model)
-
 random_noise = torch.randn((1, channels, image_size, image_size), device=device)
-#print(random_noise.size())
 predicted_noise = model(random_noise, torch.tensor([timesteps]))
-#print(predicted_noise)
-#print(predicted_noise.size())
 
 img = predicted_noise
 for i in tqdm(reversed(range(0, timesteps)), desc='sampling loop time step', total=timesteps):
-    #print(i)
     img = p_sample(model, img, torch.full((1,), i, device=device, dtype=torch.long), i)
-    #print(img.size())
-    #break
 img = (img + 1) * 0.5
-#print('cek max min', torch.max(img), torch.min(img))
 img = img[0]
-#img = img.view(img.shape[1], img.shape[2], img.shape[0])
-#plt.imshow(img)
-#plt.show()
-
 save_image(img, 'res.png', nrow = 1)
-
-#all_images_list = list(map(lambda n: sample(model, image_size, batch_size=n, channels=channels), img))[0]
-#all_images_list = sample(model, image_size, batch_size=1, channels=channels)
-#all_images_list = [torch.tensor(arr) for arr in all_images_list]
-#all_images = torch.cat(all_images_list, dim=0)
-#all_images = (all_images + 1) * 0.5
-#img = all_images[-1]
-#print(img.size())
-#save_image(img, 'res.png')
-
-#img = img.view(img.shape[1], img.shape[2], img.shape[0])
-#plt.imshow(img)
-#plt.show()
