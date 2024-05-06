@@ -30,10 +30,10 @@ timesteps = 300
 #alphas_cumprod=torch.cumprod(alphas,0)
 #alphas_cumprod_sqrt=alphas_cumprod.sqrt()
 
-def input_T(input):
-    # [0,1] -> [-1,+1]
-    return 2*input-1
-    
+#def input_T(input):
+#    # [0,1] -> [-1,+1]
+#    return 2*input-1
+#    
 def output_T(input):
     # [-1,+1] -> [0,1]
     return (input+1)/2

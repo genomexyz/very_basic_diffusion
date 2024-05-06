@@ -30,9 +30,9 @@ timesteps = 300
 #alphas_cumprod=torch.cumprod(alphas,0)
 #alphas_cumprod_sqrt=alphas_cumprod.sqrt()
 
-def input_T(input):
-    # [0,1] -> [-1,+1]
-    return 2*input-1
+#def input_T(input):
+#    # [0,1] -> [-1,+1]
+#    return 2*input-1
     
 def output_T(input):
     # [-1,+1] -> [0,1]
@@ -478,7 +478,7 @@ def sample(model, image_size, batch_size=16, channels=3):
     return p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))
 
 batch_size = 32
-image_size = 56
+image_size = 64
 channels = 3
 save_and_sample_every = 100
 epochs = 6
@@ -486,7 +486,8 @@ epochs = 6
 # Define transformations to be applied to your images
 transform = transforms.Compose([
     #transforms.Resize((256, 256)),  # Resize images to 224x224
-    transforms.Resize((56, 56)),  # Resize images to 224x224
+    #transforms.Resize((56, 56)),  # Resize images to 224x224
+    transforms.Resize((image_size, image_size)),  # Resize images to 224x224
     transforms.ToTensor(),           # Convert images to PyTorch tensors
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize images
 ])
@@ -499,7 +500,8 @@ model = Unet(
     dim_mults=(1, 2, 4,)
 )
 model.to(device)
-model.load_state_dict(torch.load('model/final-model.pth', map_location=torch.device('cpu')))
+#model.load_state_dict(torch.load('model128/final-model.pth', map_location=torch.device('cpu')))
+model.load_state_dict(torch.load('model128/model-4.pth', map_location=torch.device('cpu')))
 
 random_noise = torch.randn((1, channels, image_size, image_size), device=device)
 predicted_noise = model(random_noise, torch.tensor([timesteps]))
@@ -509,4 +511,4 @@ for i in tqdm(reversed(range(0, timesteps)), desc='sampling loop time step', tot
     img = p_sample(model, img, torch.full((1,), i, device=device, dtype=torch.long), i)
 img = (img + 1) * 0.5
 img = img[0]
-save_image(img, 'res.png', nrow = 1)
+save_image(img, 'res128.png', nrow = 1)
